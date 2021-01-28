@@ -14,12 +14,6 @@ buildscript {
     }
 }
 
-task installGitHook(type: Copy) {
-    from new File(rootProject.rootDir, '.githooks/pre-commit')
-    into { new File(rootProject.rootDir, '.git/hooks') }
-    fileMode 0777
-}
-tasks.getByPath(':app:preBuild').dependsOn installGitHook
 
 allprojects {
     repositories {
@@ -27,6 +21,28 @@ allprojects {
         jcenter()
     }
 }
+
+task copyGitHook(type: Copy) {
+    from new File(rootProject.rootDir, 'githooks/pre-commit')
+    into { new File(rootProject.rootDir, '.git/hooks') }
+    fileMode 0777
+    doLast {
+        logger.info('Git hooks copied successfully')
+    }
+}
+
+task installGitHook(type: Exec) {
+    workingDir rootDir
+    commandLine 'chmod'
+    args '-R', '+x', '.git/hooks/'
+    dependsOn copyGitHook
+    doLast {
+        logger.info('Git hooks installed successfully')
+    }
+}
+
+tasks.getByPath(':app:preBuild').dependsOn installGitHook
+tasks.getByPath(':app:clean').dependsOn installGitHook
 
 task clean(type: Delete) {
     delete rootProject.buildDir
